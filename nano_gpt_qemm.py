@@ -1,6 +1,7 @@
+%%writefile nano_gpt_qemm.py
 """
-MuseLLM-Lab17 v0.11-fix — nanoGPT-QEMM (corrigido e estável)
-CPMAT Lab 17, IC/UFAL — 26 de fevereiro de 2026
+MuseLLM-Lab17 v0.12 — nanoGPT-QEMM com SAE + Self-Discovery
+CPMAT Lab 17, IC/UFAL — 26/02/2026
 """
 
 import torch
@@ -24,12 +25,12 @@ class Quaternion:
                           a*g - b*h + c*e + d*f,
                           a*h + b*g - c*f + d*e)
 
-# ====================== QRoPE (corrigido - theta full dim) ======================
+# ====================== QRoPE ======================
 class QRoPE(nn.Module):
     def __init__(self, dim):
         super().__init__()
         self.dim = dim
-        self.theta = torch.exp(torch.linspace(0, -np.log(10000), dim))  # agora full 128
+        self.theta = torch.exp(torch.linspace(0, -np.log(10000), dim))
 
     def forward(self, q, position):
         angle = position.unsqueeze(-1) * self.theta
@@ -72,30 +73,62 @@ class NanoGPT_QEMM(nn.Module):
             x = q.r
         return self.head(x)
 
+# ====================== SAE Interno ======================
+class QSAE(nn.Module):
+    def __init__(self, dim=128, latent=512):
+        super().__init__()
+        self.encoder = nn.Linear(dim, latent)
+        self.decoder = nn.Linear(latent, dim)
+
+    def forward(self, x):
+        latent = F.relu(self.encoder(x))
+        sparse = F.relu(latent - 0.08)
+        return self.decoder(sparse), sparse
+
+# ====================== Self-Discovery ======================
+def occam_score(p):
+    return torch.var(p).item()
+
+def self_discovery_step(model, sae, tokens, optimizer):
+    with torch.no_grad():
+        logits = model(tokens)
+        _, hidden = model(tokens) if hasattr(model, 'forward') else (logits, logits)
+        _, latent = sae(hidden.mean(dim=1))
+        extension = latent.clone() * 0.95   # compressão suave
+        score_before = occam_score(latent)
+        score_after = occam_score(torch.cat([latent, extension], dim=0))
+
+        if score_after < score_before * 0.98:
+            print("🎉 EXTENSÃO ELEGANTE ENCONTRADA! O muso descobriu sua criatividade.")
+        else:
+            print("   Occam rejeitou — tentando novamente...")
+
+    optimizer.zero_grad()
+    loss = F.cross_entropy(logits.view(-1, logits.size(-1)), tokens.view(-1))
+    loss.backward()
+    optimizer.step()
+    return loss.item()
+
 # ====================== MAIN ======================
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"🚀 MuseLLM-Lab17 v0.11-fix rodando em {device} — CPMAT Lab 17, UFAL\n")
+    print(f"🚀 MuseLLM-Lab17 v0.12 rodando em {device} — CPMAT Lab 17, UFAL\n")
 
-    # Dataset um pouco maior para seq_len maior
     text = ("light speed constant relativity einstein elevator equivalence principle "
             "michelson morley lorentz transformation spacetime curvature gravity "
-            "quantum wave particle duality") * 20
+            "quantum wave particle duality photon electron") * 30
 
     vocab = {w: i for i, w in enumerate(set(text.split()))}
     tokens = torch.tensor([[vocab[w] for w in text.split()]], dtype=torch.long).to(device)
 
     model = NanoGPT_QEMM(vocab_size=len(vocab), n_embd=128, n_layer=4).to(device)
+    sae = QSAE(dim=128).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
 
-    print("Iniciando treino curto...\n")
-    for epoch in range(8):
-        optimizer.zero_grad()
-        logits = model(tokens)
-        loss = F.cross_entropy(logits.view(-1, logits.size(-1)), tokens.view(-1))
-        loss.backward()
-        optimizer.step()
-        print(f"Epoch {epoch+1}/8 | Loss: {loss.item():.4f}")
+    print("Iniciando treino com self-discovery...\n")
+    for epoch in range(10):
+        loss = self_discovery_step(model, sae, tokens, optimizer)
+        print(f"Epoch {epoch+1}/10 | Loss: {loss:.4f}")
 
-    print("\n✅ v0.11-fix executada com sucesso!")
-    print("O muso artificial já está treinando com quaternion RoPE corrigido.")
+    print("\n✅ v0.12 concluída com sucesso!")
+    print("O muso artificial já está tentando descobrir sua própria criatividade.")

@@ -13,7 +13,7 @@ A minimal, educational, and extensible implementation of a **Quaternion-based fo
 
 ### Quick Start (Colab free)
 ```bash
-git clone https://github.com/YOURUSERNAME/MuseLLM-Lab17.git
+git clone https://github.com/Leonardo-Viana/MuseLLM-Lab17.git
 cd MuseLLM-Lab17
 pip install -r requirements.txt
 python qemm_toy.py

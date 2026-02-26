@@ -1,19 +1,20 @@
-# MuseLLM-Lab17
+# MuseLLM-Lab17 v0.11 — nanoGPT-QEMM
 
-**Quaternion Embodied Muse Model (QEMM) – Toy Implementation**  
-*From the CPMAT Lab 17 at IC/UFAL, Maceió, Brazil*
+**Quaternion Embodied Muse Model baseado em nanoGPT**  
+CPMAT Lab 17, IC/UFAL, Maceió — 26 de fevereiro de 2026
 
-A minimal, educational, and extensible implementation of a **Quaternion-based foundation model** inspired by:
-- Tesla's complex-valued RoPE for World Models (patent 2026)
-- Numerical Recipes in C (stability, Horner schemes, cancellation avoidance)
-- Sparse Autoencoders (SAE) for spontaneous pattern discovery
-- Falível self-discovery loop (tentativa + Navalha de Occam emergente + auto-avaliação a posteriori)
+Primeira versão funcional completa do projeto.  
+Inclui:
+- RoPE quaternion (generalização da técnica complexa usada no Tesla FSD/Optimus)
+- Camadas quaternion-aware
+- SAE interno para descoberta espontânea de padrões
+- Loop de auto-descoberta estética + Navalha de Occam emergente
+- Treino em textos científicos (física, relatividade, etc.)
 
-**Goal**: Build a model that does not "know" it is creative — it discovers it only after trying to extend patterns and succeeding.
+### Como rodar no Colab (gratuito)
+```python
+!git clone https://github.com/Leonardo-Viana/MuseLLM-Lab17.git
+%cd MuseLLM-Lab17
+!pip install -r requirements.txt
+!python nano_gpt_qemm.py# MuseLLM-Lab17
 
-### Quick Start (Colab free)
-```bash
-git clone https://github.com/Leonardo-Viana/MuseLLM-Lab17.git
-cd MuseLLM-Lab17
-pip install -r requirements.txt
-python qemm_toy.py
